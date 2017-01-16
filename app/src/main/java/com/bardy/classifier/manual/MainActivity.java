@@ -74,18 +74,21 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         try {
             mClientId = loadClientId();
 
-            AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(mClientId,
-                    AuthenticationResponse.Type.TOKEN,
-                    REDIRECT_URI);
+            AuthenticationRequest.Builder builder =
+                    new AuthenticationRequest.Builder(mClientId, AuthenticationResponse.Type.TOKEN, REDIRECT_URI);
             builder.setScopes(new String[]{"user-read-private", "streaming"});
             AuthenticationRequest request = builder.build();
-
             AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
 
             mTitle = (TextView) findViewById(R.id.track_title);
             mArtist = (TextView) findViewById(R.id.track_artist);
             mAlbumCover = (ImageView) findViewById(R.id.track_album_cover);
             mPlayButton = (ImageButton) findViewById(R.id.play_button);
+            LinearLayout starsContainer = (LinearLayout) findViewById(R.id.stars_container);
+            for(int i = 0; i < starsContainer.getChildCount(); i++) {
+                ImageButton star = (ImageButton) starsContainer.getChildAt(i);
+                mStars[i] = star;
+            }
 
             mRequestQueue = Volley.newRequestQueue(this);
         } catch (IOException e) {
@@ -97,7 +100,6 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
-        // Check if result comes from the correct activity
         if (requestCode == REQUEST_CODE) {
             AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
             if (response.getType() == AuthenticationResponse.Type.TOKEN) {
@@ -145,26 +147,6 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                 togglePlay();
             }
         });
-
-        LinearLayout starsContainer = (LinearLayout) findViewById(R.id.stars_container);
-        for(int i = 0; i < starsContainer.getChildCount(); i++) {
-            ImageButton star = (ImageButton) starsContainer.getChildAt(i);
-
-            final int index = i;
-            star.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    rateTrack(mCurrentSpotifyId, mCurrentTrackName, index + 1);
-
-                    for(int j = 0; j <= index; j++)
-                        mStars[j].setImageResource(R.drawable.ic_star_white_18dp);
-
-                    playRandomDeepHouse();
-                }
-            });
-
-            mStars[i] = star;
-        }
     }
 
     @Override
@@ -258,11 +240,13 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                         mPlayer.playUri(new Player.OperationCallback() {
                             @Override
                             public void onSuccess() {
-                                for(int i = 0; i < mStars.length; i++) {
-                                    mCurrentSpotifyId = spotifyId;
-                                    mCurrentTrackName = name;
+                                mCurrentSpotifyId = spotifyId;
+                                mCurrentTrackName = name;
+
+                                setStarListeners();
+
+                                for(int i = 0; i < mStars.length; i++)
                                     mStars[i].setImageResource(R.drawable.ic_star_border_white_18dp);
-                                }
                             }
 
                             @Override
@@ -286,6 +270,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     }
 
     private void rateTrack(String spotifyId, String name, int stars) {
+        removeStarListeners();
+
         String url = "http://35.167.14.171:9000/rate-track";
 
         try {
@@ -337,6 +323,34 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
 
     private void setPauseButton() {
         mPlayButton.setImageResource(R.drawable.ic_pause_circle_outline_white_24dp);
+    }
+
+    private void setStarListeners() {
+        LinearLayout starsContainer = (LinearLayout) findViewById(R.id.stars_container);
+        for(int i = 0; i < starsContainer.getChildCount(); i++) {
+            ImageButton star = (ImageButton) starsContainer.getChildAt(i);
+
+            final int index = i;
+            star.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    rateTrack(mCurrentSpotifyId, mCurrentTrackName, index + 1);
+
+                    for(int j = 0; j <= index; j++)
+                        mStars[j].setImageResource(R.drawable.ic_star_white_18dp);
+
+                    playRandomDeepHouse();
+                }
+            });
+        }
+    }
+
+    private void removeStarListeners() {
+        LinearLayout starsContainer = (LinearLayout) findViewById(R.id.stars_container);
+        for(int i = 0; i < starsContainer.getChildCount(); i++) {
+            ImageButton star = (ImageButton) starsContainer.getChildAt(i);
+            star.setOnClickListener(null);
+        }
     }
 
     private String loadClientId() throws IOException {
