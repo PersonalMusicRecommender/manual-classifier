@@ -6,7 +6,12 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -43,7 +48,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback {
+public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback, PopupMenu.OnMenuItemClickListener {
 
     public static final String TAG = "MainAcitivity";
 
@@ -70,6 +75,9 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
         try {
             mClientId = loadClientId();
@@ -121,6 +129,31 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                 });
             }
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_tracks:
+                showTracksMenu(findViewById(R.id.action_tracks));
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        return false;
     }
 
     @Override
@@ -245,8 +278,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
 
                                 setStarListeners();
 
-                                for(int i = 0; i < mStars.length; i++)
-                                    mStars[i].setImageResource(R.drawable.ic_star_border_white_18dp);
+                                for(ImageButton star : mStars)
+                                    star.setImageResource(R.drawable.ic_star_border_white_18dp);
                             }
 
                             @Override
@@ -351,6 +384,13 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
             ImageButton star = (ImageButton) starsContainer.getChildAt(i);
             star.setOnClickListener(null);
         }
+    }
+
+    public void showTracksMenu(View v) {
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.setOnMenuItemClickListener(this);
+        popup.inflate(R.menu.tracks);
+        popup.show();
     }
 
     private String loadClientId() throws IOException {
