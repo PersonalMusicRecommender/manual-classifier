@@ -51,12 +51,11 @@ import java.util.Properties;
 public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback,
         ConnectionStateCallback, PopupMenu.OnMenuItemClickListener {
 
-    public static final String TAG = "MainAcitivity";
+    public static final String TAG = "MainActivity";
 
     private String mClientId;
     private static final String REDIRECT_URI = "personal-music-recommender://callback";
     private static final int REQUEST_CODE = 1337;
-
     private String mToken;
 
     private RequestQueue mRequestQueue;
@@ -65,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
 
     private String mCurrentSpotifyId;
     private String mCurrentTrackName;
+    private JSONArray mQueuedTracks;
 
     private TextView mTitle;
     private TextView mArtist;
@@ -85,7 +85,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
 
             AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(
                     mClientId,
-                    AuthenticationResponse.Type.TOKEN, REDIRECT_URI
+                    AuthenticationResponse.Type.TOKEN,
+                    REDIRECT_URI
             );
             builder.setScopes(new String[]{"user-read-private", "streaming"});
             AuthenticationRequest request = builder.build();
@@ -102,6 +103,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
             }
 
             mRequestQueue = Volley.newRequestQueue(this);
+
+            mQueuedTracks = new JSONArray();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -233,49 +236,69 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     }
 
     private void playRandomDeepHouse() {
-        String url ="https://api.spotify.com/v1/recommendations?seed_genres=deep-house&limit=1";
+        String url ="https://api.spotify.com/v1/recommendations?seed_genres=deep-house&limit=100";
 
-        JsonObjectRequest recommendationsRequest = new JsonObjectRequest(
-                Request.Method.GET, url,
-                null,
-                new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject json) {
-                try {
-                    JSONArray tracks = json.getJSONArray("tracks");
-                    if(tracks.length() > 0) {
-                        JSONObject track = tracks.getJSONObject(0);
-                        JsonObjectRequest playRequest =
-                                createPlayRequest(
-                                        track.getString("id"),
-                                        track.getString("name"),
-                                        track.getString("uri")
-                                );
-                        playRequest.setTag(TAG);
-                        mRequestQueue.add(playRequest);
-                    }
-                    else
-                        playRandomDeepHouse();
-                } catch (JSONException e) {
-                    e.printStackTrace();
+        if(mQueuedTracks.length() == 0) {
+            Toast.makeText(
+                    MainActivity.this,
+                    "Requesting songs...",
+                    Toast.LENGTH_SHORT
+            ).show();
+            JsonObjectRequest recommendationsRequest = new JsonObjectRequest(
+                    Request.Method.GET,
+                    url,
+                    null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject json) {
+                            try {
+                                mQueuedTracks = json.getJSONArray("tracks");
+                                playDeepHouseSong();
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Log.e("Recommendations request", error.toString());
                 }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("Recommendations request",error.toString());
-            }
-        }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String>  params = new HashMap<>();
-                params.put("AUTHORIZATION", "Bearer " + mToken);
-                return params;
-            }
-        };
-        recommendationsRequest.setTag(TAG);
+            }) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("AUTHORIZATION", "Bearer " + mToken);
+                    return params;
+                }
+            };
+            recommendationsRequest.setTag(TAG);
 
-        mRequestQueue.add(recommendationsRequest);
+            mRequestQueue.add(recommendationsRequest);
+        }
+        else
+            playDeepHouseSong();
+    }
+
+    private void playDeepHouseSong() {
+        try {
+            if(mQueuedTracks.length() > 0) {
+                JSONObject track = mQueuedTracks.getJSONObject(0);
+                mQueuedTracks.remove(0);
+
+                JsonObjectRequest playRequest =
+                        createPlayRequest(
+                                track.getString("id"),
+                                track.getString("name"),
+                                track.getString("uri")
+                        );
+                playRequest.setTag(TAG);
+                mRequestQueue.add(playRequest);
+            }
+            else
+                playRandomDeepHouse();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     private JsonObjectRequest createPlayRequest(
@@ -346,7 +369,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                     Toast.makeText(
                             MainActivity.this,
                             "Track wasn't rated",
-                            Toast.LENGTH_SHORT).show();
+                            Toast.LENGTH_SHORT
+                    ).show();
                     Log.e("Rate request",error.toString());
                 }
             });
