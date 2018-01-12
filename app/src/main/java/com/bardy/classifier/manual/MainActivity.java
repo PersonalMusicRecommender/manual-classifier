@@ -48,7 +48,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback, PopupMenu.OnMenuItemClickListener {
+public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback,
+        ConnectionStateCallback, PopupMenu.OnMenuItemClickListener {
 
     public static final String TAG = "MainAcitivity";
 
@@ -82,8 +83,10 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         try {
             mClientId = loadClientId();
 
-            AuthenticationRequest.Builder builder =
-                    new AuthenticationRequest.Builder(mClientId, AuthenticationResponse.Type.TOKEN, REDIRECT_URI);
+            AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(
+                    mClientId,
+                    AuthenticationResponse.Type.TOKEN, REDIRECT_URI
+            );
             builder.setScopes(new String[]{"user-read-private", "streaming"});
             AuthenticationRequest request = builder.build();
             AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
@@ -114,7 +117,10 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                 mToken = response.getAccessToken();
 
                 Config playerConfig = new Config(this, mToken, mClientId);
-                Spotify.getPlayer(playerConfig, this, new SpotifyPlayer.InitializationObserver() {
+                Spotify.getPlayer(
+                        playerConfig,
+                        this,
+                        new SpotifyPlayer.InitializationObserver() {
                     @Override
                     public void onInitialized(SpotifyPlayer spotifyPlayer) {
                         mPlayer = spotifyPlayer;
@@ -124,7 +130,10 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
 
                     @Override
                     public void onError(Throwable throwable) {
-                        Log.e("MainActivity", "Could not initialize player: " + throwable.getMessage());
+                        Log.e(
+                                "MainActivity",
+                                "Could not initialize player: " + throwable.getMessage()
+                        );
                     }
                 });
             }
@@ -226,7 +235,10 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     private void playRandomDeepHouse() {
         String url ="https://api.spotify.com/v1/recommendations?seed_genres=deep-house&limit=1";
 
-        JsonObjectRequest recommendationsRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+        JsonObjectRequest recommendationsRequest = new JsonObjectRequest(
+                Request.Method.GET, url,
+                null,
+                new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject json) {
                 try {
@@ -234,7 +246,11 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                     if(tracks.length() > 0) {
                         JSONObject track = tracks.getJSONObject(0);
                         JsonObjectRequest playRequest =
-                                createPlayRequest(track.getString("id"), track.getString("name"), track.getString("uri"));
+                                createPlayRequest(
+                                        track.getString("id"),
+                                        track.getString("name"),
+                                        track.getString("uri")
+                                );
                         playRequest.setTag(TAG);
                         mRequestQueue.add(playRequest);
                     }
@@ -262,7 +278,11 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         mRequestQueue.add(recommendationsRequest);
     }
 
-    private JsonObjectRequest createPlayRequest(final String spotifyId, final String name, final String spotifyUri) {
+    private JsonObjectRequest createPlayRequest(
+            final String spotifyId,
+            final String name,
+            final String spotifyUri
+    ) {
         String url = "http://35.167.14.171:9000/is-track-rated/" + spotifyId;
 
         return new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
@@ -313,13 +333,20 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
             data.put("name", name);
             data.put("stars", stars);
 
-            JsonObjectRequest rateRequest = new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
+            JsonObjectRequest rateRequest = new JsonObjectRequest(
+                    Request.Method.POST,
+                    url,
+                    data,
+                    new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject json) {}
             }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    Toast.makeText(MainActivity.this, "Track wasn't rated", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Track wasn't rated",
+                            Toast.LENGTH_SHORT).show();
                     Log.e("Rate request",error.toString());
                 }
             });
