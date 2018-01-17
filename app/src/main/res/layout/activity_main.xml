@@ -18,6 +18,14 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:titleTextColor="#fff"/>
 
+    <ProgressBar
+        android:id="@+id/spinner"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:indeterminateTint="#fff"
+        android:background="@color/colorPrimaryDark"
+        android:visibility="gone"/>
     <ImageView
         android:id="@+id/track_album_cover"
         android:layout_width="match_parent"

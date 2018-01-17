@@ -16,6 +16,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     private TextView mArtist;
     private ImageView mAlbumCover;
     private ImageButton mPlayButton;
+    private ProgressBar mSpinner;
     private ImageButton[] mStars = new ImageButton[5];
 
     @Override
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
             mArtist = (TextView) findViewById(R.id.track_artist);
             mAlbumCover = (ImageView) findViewById(R.id.track_album_cover);
             mPlayButton = (ImageButton) findViewById(R.id.play_button);
+            mSpinner = (ProgressBar)  findViewById(R.id.spinner);
             LinearLayout starsContainer = (LinearLayout) findViewById(R.id.stars_container);
             for(int i = 0; i < starsContainer.getChildCount(); i++) {
                 ImageButton star = (ImageButton) starsContainer.getChildAt(i);
@@ -229,14 +232,14 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     @Override
     public void onPlaybackError(Error error) {
         Log.e("MainActivity", "Playback error received: " + error.name());
-        switch (error) {
-            default:
-                break;
-        }
+        playDeepHouseSong();
     }
 
     private void playRandomDeepHouse() {
         String url ="https://api.spotify.com/v1/recommendations?seed_genres=deep-house&limit=100";
+
+        mAlbumCover.setVisibility(View.GONE);
+        mSpinner.setVisibility(View.VISIBLE);
 
         if(mQueuedTracks.length() == 0) {
             Toast.makeText(
@@ -371,7 +374,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
                             "Track wasn't rated",
                             Toast.LENGTH_SHORT
                     ).show();
-                    Log.e("Rate request",error.toString());
+                    Log.e("Rate request", error.toString());
                 }
             });
             rateRequest.setTag(TAG);
@@ -389,9 +392,11 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
             mTitle.setText(trackData.name);
             mArtist.setText(trackData.artistName);
             new DownloadImageTask(mAlbumCover).execute(trackData.albumCoverWebUrl);
+            mAlbumCover.setVisibility(View.VISIBLE);
+            mSpinner.setVisibility(View.GONE);
         }
         else
-            playRandomDeepHouse();
+            Log.e("Metadata", "null");
     }
 
     private void togglePlay() {
