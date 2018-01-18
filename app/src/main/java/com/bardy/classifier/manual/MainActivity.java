@@ -50,7 +50,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback,
-        ConnectionStateCallback, PopupMenu.OnMenuItemClickListener {
+        ConnectionStateCallback {
 
     public static final String TAG = "MainActivity";
 
@@ -156,8 +156,8 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_tracks:
-                showTracksMenu(findViewById(R.id.action_tracks));
+            case R.id.action_sync:
+                syncTracks();
                 return true;
 
             default:
@@ -166,10 +166,10 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         }
     }
 
-    @Override
+    /*@Override
     public boolean onMenuItemClick(MenuItem item) {
         return false;
-    }
+    }*/
 
     @Override
     protected void onStop () {
@@ -385,6 +385,60 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         }
     }
 
+    private void syncTracks() {
+        String url = "http://35.167.14.171:9000/sync";
+
+        Toast.makeText(MainActivity.this, "Syncing...", Toast.LENGTH_SHORT).show();
+
+        try {
+            JSONObject data = new JSONObject();
+            data.put("token", mToken);
+
+            JsonObjectRequest rateRequest = new JsonObjectRequest(
+                    Request.Method.POST,
+                    url,
+                    data,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject json) {
+                            try {
+                                if(json.getBoolean("success")) {
+                                    Toast.makeText(
+                                            MainActivity.this,
+                                            "Sync successful",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                                else {
+                                    Toast.makeText(
+                                            MainActivity.this,
+                                            "Sync returned failure",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Sync failed",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    Log.e("Sync", error.toString());
+                }
+            });
+            rateRequest.setTag(TAG);
+
+            mRequestQueue.add(rateRequest);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void setMetadata() {
         Metadata.Track trackData = mPlayer.getMetadata().currentTrack;
 
@@ -442,12 +496,12 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         }
     }
 
-    public void showTracksMenu(View v) {
+    /*public void showTracksMenu(View v) {
         PopupMenu popup = new PopupMenu(this, v);
         popup.setOnMenuItemClickListener(this);
         popup.inflate(R.menu.tracks);
         popup.show();
-    }
+    }*/
 
     private String loadClientId() throws IOException {
         Properties properties = new Properties();
